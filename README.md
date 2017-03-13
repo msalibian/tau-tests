@@ -64,139 +64,163 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 ![](README_files/figure-markdown_github/levres-1.png)
 
 <!-- n <- nrow(x2) -->
-<!-- # Now show the estimated coefficients and -->
-<!-- # p-values for each individual t-test -->
-<!-- # using an asymptotic normal approximation for -->
-<!-- # the distribution of the regression estimators -->
-<!-- uu <- abs(a$beta/sqrt(diag(a$cov))) -->
-<!-- round(2*(1 - pt(uu, df=nrow(xa)-ncol(xa))), 3) -->
-<!-- #(Intercept)     0.000 -->
-<!-- #RT4WordsBack    0.000 -->
-<!-- #RT3WordsBack    0.000 -->
-<!-- #RT1WordBack     0.000 -->
-<!-- #RTtoPrime       0.000 -->
-<!-- #RT2WordsLater   0.000 -->
-<!-- #LengthInLetters 0.014 -->
-<!-- #RT2WordsBack    0.045 -->
-<!-- #FamilySize      0.223 -->
-<!-- #RT1WordLater    0.394 -->
-<!-- #Rating          0.842 -->
-<!-- #NumberOfSynsets 0.188 -->
-<!-- #BaseFrequency   0.619 -->
-<!-- #RootFrequency   0.860 -->
-<!-- # now using the FRB -->
-<!-- b2 <- 0.1278 -->
-<!-- fi <- as.vector(xa %*% a$beta) -->
-<!-- rr <- y - fi -->
-<!-- tmp2 <- tautestRBPairs(x=xa, fi=fi, rr=rr, beta=a$beta, sigma=a$scale, R=1000)$betastR -->
-<!-- a$cov <- var(tmp2) -->
-<!-- uu <- abs(a$beta/sqrt(diag(a$cov))) -->
-<!-- round(2*(1 - pt(uu, df=nrow(xa)-ncol(xa))), 3) -->
-<!-- #(Intercept)     0.000 -->
-<!-- #RT4WordsBack    0.002 -->
-<!-- #RT3WordsBack    0.000 -->
-<!-- #RT1WordBack     0.000 -->
-<!-- #RTtoPrime       0.012 -->
-<!-- #RT2WordsLater   0.004 -->
-<!-- #LengthInLetters 0.040 -->
-<!-- #RT2WordsBack    0.240 -->
-<!-- #FamilySize      0.171 -->
-<!-- #RT1WordLater    0.470 -->
-<!-- #Rating          0.896 -->
-<!-- #NumberOfSynsets 0.354 -->
-<!-- #BaseFrequency   0.714 -->
-<!-- #RootFrequency   0.849 -->
-<!-- # remove all with (rounded) p-values > 0.05 -->
-<!-- # Build design matrices to compute the FRB p-values -->
-<!-- # for the robust tests of the hypothesis -->
-<!-- # that all the above betas are indeed zero -->
-<!-- xa <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + -->
-<!-- RT1WordBack + RTtoPrime + -->
-<!-- RT2WordsLater + LengthInLetters + RT2WordsBack + -->
-<!-- FamilySize + RT1WordLater +  Rating + NumberOfSynsets + -->
-<!-- BaseFrequency + RootFrequency, data=x2) -->
-<!-- x0 <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + -->
-<!-- RT1WordBack + RTtoPrime + -->
-<!-- RT2WordsLater + LengthInLetters, data=x2) -->
-<!-- y <- x2$RT -->
-<!-- # Compute the FRB p-values -->
-<!-- set.seed(123) -->
-<!-- tau.t <- tautest(x0=x0, xa=xa, y = y, R=1000, Nsamp=2500) -->
-<!-- round(unlist(tau.t), 4) -->
-<!-- # XXXtest -> test statistic value -->
-<!-- # XXXpvalue -> p-value estimated with the asymptotic approximation -->
-<!-- # XXXBpvalue -> p-value estimated with the FRB -->
-<!-- #        tauHa         tauH0     ratiotest    Sratiotest      ASconstS -->
-<!-- #       0.3168        0.3193        0.0156        0.0315        0.4530 -->
-<!-- # Sratiopvalue      SscaleH0      SscaleHa         Wtest         Stest -->
-<!-- #       0.2288        0.2535        0.2496        8.0959       42.3255 -->
-<!-- #      Wpvalue       Spvalue   ratiopvalue       ASconst       LRTtest -->
-<!-- #       0.3242        0.0000        0.2211        0.9264        9.5116 -->
-<!-- #    LRTpvalue  ratioBpvalue      WBpvalue      SBpvalue    LRTBpvalue -->
-<!-- #       0.2180        0.3154        0.4072        0.2555        0.2645 -->
-<!-- #SratioBpvalue -->
-<!-- #       0.1018 -->
-<!-- # the bootstrap p-values are systematically larger -->
-<!-- # indicating not enough evidence to reject the smaller -->
-<!-- # model. In fact, the smaller model gives better -->
-<!-- # robust predictions! -->
-<!-- # prediction powers via 5-fold CV for different trimming values -->
-<!-- # trimmed MSE function -->
-<!-- # returns the average of the (1-alpha)100% -->
-<!-- # smallest elements in "x", each of them squared -->
-<!-- tm <- function(x, alpha) { -->
-<!-- n <- length(x) -->
-<!-- n0 <- floor(alpha * n) -->
-<!-- n <- n - n0 -->
-<!-- return( mean( (sort(x^2))[1:n] ) ) -->
-<!-- } -->
-<!-- n <- dim(x2)[1] -->
-<!-- # Number of 5-fold CV runs -->
-<!-- N <- 500 -->
-<!-- # trimming proportions -->
-<!-- alp.tr <- c(0, 0.01, 0.02, 0.05, 0.10, .15, .2) -->
-<!-- la <- length(alp.tr) -->
-<!-- # store the TMSPE -->
-<!-- mse.r1 <- mse.r2 <- matrix(0, N, la) -->
-<!-- set.seed(123) -->
-<!-- # 5-fold CV -->
-<!-- ii <- c(1, rep(1:5, each=131)) #ii <- c(1:4, rep(1:5, each=124)) -->
-<!-- for(i in 1:N) { -->
-<!--    ii <- sample(ii) -->
-<!--    pr.r1 <- pr.r2 <- rep(0, n) -->
-<!--    for(j in 1:5) { -->
-<!--        # fit full model -->
-<!--        a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j]) -->
-<!--        # fit reduced model -->
-<!--        b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j]) -->
-<!--        # predictions (full and reduced models) -->
-<!--        pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta) -->
-<!--        pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta) -->
-<!--    } -->
-<!--    for(j in 1:la) { -->
-<!--        # TMSPE  for full and reduced models -->
-<!--        mse.r1[i, j] <- tm( (y - pr.r1), alpha=alp.tr[j] ) # 0.05 -->
-<!--        mse.r2[i, j] <- tm( (y - pr.r2), alpha=alp.tr[j] ) -->
-<!--    } -->
-<!--    print(c(i, mean(mse.r1[1:i,4]), mean(mse.r2[1:i,4]))) -->
-<!-- } -->
-<!-- # show the results -->
-<!-- boxplot(mse.r1[,1], mse.r2[,1], -->
-<!-- mse.r1[,2], mse.r2[,2], -->
-<!-- mse.r1[,3], mse.r2[,3], -->
-<!-- mse.r1[,4], mse.r2[,4], -->
-<!-- mse.r1[,5], mse.r2[,5], -->
-<!-- mse.r1[,6], mse.r2[,6], -->
-<!-- mse.r1[,7], mse.r2[,7], -->
-<!-- labels=rep(la, each=2), col=rep(c('gray90', 'lightblue'), 5)) -->
-<!-- # show the results -->
-<!-- par(mfrow=c(2, 3)) -->
-<!-- for(j in 2:7) { -->
-<!-- boxplot(mse.r1[,j], mse.r2[,j], col=c('gray90', 'lightblue'), -->
-<!-- main=paste('Trimming: ', alp.tr[j], sep=''), -->
-<!-- names = c('Full', 'Reduced'), main='', ylab='TMSPE', cex.axis=1.3, cex.lab=1.3) -->
-<!-- } -->
-<!-- # 10% trimmed MSPE -->
-<!-- boxplot(mse.r1[,5], mse.r2[,5], col=c('gray90', 'lightblue'), -->
-<!-- #main=paste('Trimming: ', alp.tr[j], sep=''), -->
-<!-- names = c('Full', 'Reduced'), main='', ylab='TMSPE', cex.axis=1.3, cex.lab=1.3) -->
+The estimated p-values for the individual tests of significance for each regression parameter using the asymptotic normal approximation for the distribution of the tau-estimator gives
+
+``` r
+uu <- abs(a$beta/sqrt(diag(a$cov)))
+round(2 * (1 - pt(uu, df = nrow(xa) - ncol(xa))), 3)
+```
+
+    ##                  [,1]
+    ## (Intercept)     0.000
+    ## RT4WordsBack    0.000
+    ## RT3WordsBack    0.000
+    ## RT1WordBack     0.000
+    ## RTtoPrime       0.000
+    ## RT2WordsLater   0.000
+    ## LengthInLetters 0.014
+    ## RT2WordsBack    0.045
+    ## FamilySize      0.223
+    ## RT1WordLater    0.394
+    ## Rating          0.842
+    ## NumberOfSynsets 0.188
+    ## BaseFrequency   0.619
+    ## RootFrequency   0.860
+
+The corresponding p-values computed with the Fast and Robust Bootstrap (see [here](http://here)) are:
+
+``` r
+b2 <- 0.1278
+fi <- as.vector(xa %*% a$beta)
+rr <- y - fi
+tmp2 <- tautestRBPairs(x = xa, fi = fi, rr = rr, beta = a$beta, sigma = a$scale, 
+    R = 1000)$betastR
+a$cov <- var(tmp2)
+uu <- abs(a$beta/sqrt(diag(a$cov)))
+round(2 * (1 - pt(uu, df = nrow(xa) - ncol(xa))), 3)
+```
+
+    ##                  [,1]
+    ## (Intercept)     0.000
+    ## RT4WordsBack    0.002
+    ## RT3WordsBack    0.000
+    ## RT1WordBack     0.000
+    ## RTtoPrime       0.012
+    ## RT2WordsLater   0.004
+    ## LengthInLetters 0.040
+    ## RT2WordsBack    0.240
+    ## FamilySize      0.171
+    ## RT1WordLater    0.470
+    ## Rating          0.896
+    ## NumberOfSynsets 0.354
+    ## BaseFrequency   0.714
+    ## RootFrequency   0.849
+
+We now test simultaneously whether the submodel resulting of retaining only the variables with significant individual tests is sufficient (in other words, the restricted model contains only explanatory variables with p-values &gt; 0.05)
+
+``` r
+xa <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + RT1WordBack + RTtoPrime + 
+    RT2WordsLater + LengthInLetters + RT2WordsBack + FamilySize + RT1WordLater + 
+    Rating + NumberOfSynsets + BaseFrequency + RootFrequency, data = x2)
+
+x0 <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + RT1WordBack + RTtoPrime + 
+    RT2WordsLater + LengthInLetters, data = x2)
+
+y <- x2$RT
+
+# Compute the FRB p-values
+
+set.seed(123)
+tau.t <- tautest(x0 = x0, xa = xa, y = y, R = 1000, Nsamp = 2500)
+round(unlist(tau.t), 4)
+```
+
+    ##         tauHa         tauH0     ratiotest    Sratiotest      ASconstS 
+    ##        0.3168        0.3193        0.0156        0.0315        0.4530 
+    ##  Sratiopvalue      SscaleH0      SscaleHa         Wtest         Stest 
+    ##        0.2288        0.2535        0.2496        8.0959       42.3713 
+    ##       Wpvalue       Spvalue   ratiopvalue       ASconst       LRTtest 
+    ##        0.3242        0.0000        0.2212        0.9264        9.5117 
+    ##     LRTpvalue  ratioBpvalue      WBpvalue      SBpvalue    LRTBpvalue 
+    ##        0.2180        0.3154        0.4072        0.2545        0.2645 
+    ## SratioBpvalue 
+    ##        0.1028
+
+The labels for the above p-values is as follows: - XXXtest: is the corresponding value of the test statistic; - XXXpvalue: is the p-value estimated with the asymptotic approximation - XXXBpvalue: is the p-value estimated with the FRB
+
+Note that the bootstrap p-values are systematically larger than those based on the asymptotic distribution, which suggests that there is not enough evidence to reject the smaller model. In fact, the smaller model gives better robust predictions.
+
+prediction powers via 5-fold CV for different trimming values
+-------------------------------------------------------------
+
+``` r
+# trimmed MSE function
+# returns the average of the (1-alpha)100%
+# smallest elements in "x", each of them squared
+tm <- function(x, alpha) {
+n <- length(x)
+n0 <- floor(alpha * n)
+n <- n - n0
+return( mean( (sort(x^2))[1:n] ) )
+}
+
+
+n <- dim(x2)[1]
+# Number of 5-fold CV runs
+N <- 50 # 500
+# trimming proportions
+# alp.tr <- c(0, 0.01, 0.02, 0.05, 0.10, .15, .2)
+# la <- length(alp.tr)
+# store the TMSPE
+mse.r1 <- mse.r2 <- rep(0, N) # matrix(0, N, la)
+set.seed(123)
+# 5-fold CV
+k <- 5
+ii <- (1:n) %% k + 1 # c(1, rep(1:5, each=131)) #ii <- c(1:4, rep(1:5, each=124))
+for(i in 1:N) {
+    ii <- sample(ii)
+    pr.r1 <- pr.r2 <- rep(0, n)
+    for(j in 1:5) {
+        # fit full model
+        a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j])
+        # fit reduced model
+        b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j])
+        # predictions (full and reduced models)
+        pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta)
+        pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta)
+    }
+    # for(j in 1:la) {
+    #   # TMSPE  for full and reduced models
+    #   mse.r1[i, j] <- tm( (y - pr.r1), alpha=alp.tr[j] ) # 0.05
+    #   mse.r2[i, j] <- tm( (y - pr.r2), alpha=alp.tr[j] )
+    # }
+    mse.r1[i] <- tm( (y - pr.r1), alpha=0.10) # alp.tr[j] ) 
+    mse.r2[i] <- tm( (y - pr.r2), alpha=0.10) # alp.tr[j] ) 
+    # print(c(i, mean(mse.r1[1:i,4]), mean(mse.r2[1:i,4])))
+}
+
+# # show the results
+# boxplot(mse.r1[,1], mse.r2[,1],
+# mse.r1[,2], mse.r2[,2],
+# mse.r1[,3], mse.r2[,3],
+# mse.r1[,4], mse.r2[,4],
+# mse.r1[,5], mse.r2[,5],
+# mse.r1[,6], mse.r2[,6],
+# mse.r1[,7], mse.r2[,7],
+# labels=rep(la, each=2), col=rep(c('gray90', 'lightblue'), 5))
+# 
+# # show the results
+# par(mfrow=c(2, 3))
+# for(j in 2:7) {
+# boxplot(mse.r1[,j], mse.r2[,j], col=c('gray90', 'lightblue'),
+# main=paste('Trimming: ', alp.tr[j], sep=''),
+# names = c('Full', 'Reduced'), main='', ylab='TMSPE', cex.axis=1.3, cex.lab=1.3)
+# }
+
+# 10% trimmed MSPE
+boxplot(mse.r1, mse.r2, col=c('gray90', 'lightblue'),
+# main=paste('Trimming: ', alp.tr[j], sep=''),
+names = c('Full', 'Reduced'), ylab='TMSPE', cex.axis=1.3, cex.lab=1.3)
+```
+
+![](README_files/figure-markdown_github/preds-1.png)
