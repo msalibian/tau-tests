@@ -128,7 +128,7 @@ model. In fact, we show below that the smaller model gives better
 robust predictions.
 
 
-# Prediction powers via 5-fold CV for different trimming values
+# Prediction power of the reduced model  
 
 We will use 10 runs of 5-fold CV to compare the predictions 
 obtained with the full and the reduced models. To avoid

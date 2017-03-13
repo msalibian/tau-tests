@@ -150,8 +150,8 @@ The labels for the above p-values are as follows: \* XXXtest: is the correspondi
 
 Note that the bootstrap p-values are systematically larger than those based on the asymptotic distribution, which suggests that there is not enough evidence to reject the smaller model. In fact, we show below that the smaller model gives better robust predictions.
 
-Prediction powers via 5-fold CV for different trimming values
-=============================================================
+Prediction power of the reduced model
+=====================================
 
 We will use 10 runs of 5-fold CV to compare the predictions obtained with the full and the reduced models. To avoid penalizing poor predictions for the outlying observations, instead of using the usual mean squared residual error, for each sample we compute the 10% \`\`upper-trimmed mean squared error'' which is the mean of the 90% smallest residuals (in absolute value).
 
