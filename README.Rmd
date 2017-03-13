@@ -1,75 +1,85 @@
-Robust tests for linear regression models based on tau-estimates
-================
-Matias Salibian
-2017-03-12
+---
+title: "Robust tests for linear regression models based on tau-estimates"
+author: "Matias Salibian"
+date: "`r format(Sys.Date())`"
+output: github_document
+---
 
-Robust tests based on tau-estimates
------------------------------------
 
-This page contains R code implementing robust tests for linear regression models based on tau-estimates as proposed in Salibian-Barrera, M., Van Aelst, S. and Yohai, V.J., (2016) Robust tests for linear regression models based on tau-estimates, Computational Statistics and Data Analysis, 93, 436-455. A preprint is available [here](https://www.stat.ubc.ca/~matias/tau-tests-rev1.pdf), the paper is available [here](http://dx.doi.org/10.1016/j.csda.2014.09.012).
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-Below we reproduce the example discussed in the paper.
+## Robust tests based on tau-estimates
+
+
+This page contains R code implementing robust tests for linear regression models based on tau-estimates as proposed in Salibian-Barrera, M., Van Aelst, S. and Yohai, V.J., (2016) Robust tests for linear regression models based on tau-estimates, Computational Statistics and Data Analysis, 93, 436-455. A preprint is available [here](https://www.stat.ubc.ca/~matias/tau-tests-rev1.pdf), the paper is available [here](http://dx.doi.org/10.1016/j.csda.2014.09.012). 
+
+Below we reproduce the example discussed in the paper. 
 
 First load the required libraries and the tau-tests code available here in the file `tautests.R`:
-
-``` r
+```{R libsdat}
 library(languageR)
 library(robustbase)
 source('tautests.R')
 ```
-
-We will use a subset of a dataset available in the `languageR` package. More information can be obtained with `help(selfPacedReadingHeid)`.
-
-``` r
+We will use a subset of a dataset available in the `languageR` package. More information
+can be obtained with `help(selfPacedReadingHeid)`. 
+```{R data}
 data(selfPacedReadingHeid)
 x <- selfPacedReadingHeid
 x2 <- subset(x, subset = (Condition == "baseheid"))
 ```
 
-We now build the design matrix for the full model and compute a tau regression estimator in order to verify whether there may be any outliers in the data:
-
-``` r
-xa <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + RT1WordBack + RTtoPrime + 
-    RT2WordsLater + LengthInLetters + RT2WordsBack + FamilySize + RT1WordLater + 
-    Rating + NumberOfSynsets + BaseFrequency + RootFrequency, data = x2)
-a <- fasttau_Opt(x = xa, y = x2$RT)
+We now build the design matrix for the full model
+and compute a tau regression estimator 
+in order to verify whether there may be 
+any outliers in the data:
+```{R out1, tidy=TRUE}
+xa <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack +
+RT1WordBack + RTtoPrime +
+RT2WordsLater + LengthInLetters + RT2WordsBack +
+FamilySize + RT1WordLater +  Rating + NumberOfSynsets +
+BaseFrequency + RootFrequency, data=x2)
+a <- fasttau_Opt(x=xa, y = x2$RT) 
 ```
-
 We now build a robust-leverage vs residuals plot:
 
-``` r
-# Compute robust leverage measures (Mahalanobis distances computed in the
-# design space)
+```{R levres, fig.height=7, fig.width=7, tidy=TRUE, warning=FALSE, message=FALSE}
+# Compute robust leverage measures
+# (Mahalanobis distances computed in the design space)
 library(rrcov)
-b2 <- 0.1278
+b2 <- .1278
 y <- x2$RT
-res <- as.vector(y - xa %*% a$beta)/(a$tauscale/sqrt(b2))
-x.cov <- CovMMest(x = xa[, -1])
+res <- as.vector(y - xa %*% a$beta) / (a$tauscale/sqrt(b2))
+x.cov <- CovMMest(x=xa[,-1])
 mu <- getCenter(x.cov)
 x.cov <- getCov(x.cov)
-x.ma <- mahalanobis(x = xa[, -1], center = mu, cov = x.cov)
-plot(res ~ x.ma, pch = 19, col = "gray", cex = 1.3, ylab = "Standardized residuals", 
-    xlab = "Robust Distances")
+x.ma <- mahalanobis(x=xa[,-1], center=mu, cov=x.cov)
+plot(res ~ x.ma, pch=19, col='gray', cex=1.3, ylab='Standardized residuals',
+xlab='Robust Distances')
 # +/- 3.5 standard deviations
-abline(h = 3.5, lwd = 2, col = "gray40", lty = 2)
-abline(h = -3.5, lwd = 2, col = "gray40", lty = 2)
-abline(h = 0, lwd = 2)
+abline(h=3.5, lwd=2, col='gray40', lty=2)
+abline(h=-3.5, lwd=2, col='gray40', lty=2)
+abline(h=0, lwd=2)
 # Cut-off points for high-leverage points
-abline(v = qchisq(0.995, df = 13), lwd = 2, lty = 2, col = "gray40")
+abline(v=qchisq(.995, df=13), lwd=2, lty=2, col='gray40')
 # Highlight outliers
-oo <- (abs(res) > 3.5)
-points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
+oo <- (abs(res)>3.5)
+points(res ~ x.ma, pch=19, col='gray30', cex=1.3, subset=oo)
 ```
 
-![](README_files/figure-markdown_github/levres-1.png)
-
 <!-- n <- nrow(x2) -->
+
+
+
 <!-- # Now show the estimated coefficients and -->
 <!-- # p-values for each individual t-test -->
 <!-- # using an asymptotic normal approximation for -->
 <!-- # the distribution of the regression estimators -->
 <!-- uu <- abs(a$beta/sqrt(diag(a$cov))) -->
 <!-- round(2*(1 - pt(uu, df=nrow(xa)-ncol(xa))), 3) -->
+
 <!-- #(Intercept)     0.000 -->
 <!-- #RT4WordsBack    0.000 -->
 <!-- #RT3WordsBack    0.000 -->
@@ -84,6 +94,7 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- #NumberOfSynsets 0.188 -->
 <!-- #BaseFrequency   0.619 -->
 <!-- #RootFrequency   0.860 -->
+
 <!-- # now using the FRB -->
 <!-- b2 <- 0.1278 -->
 <!-- fi <- as.vector(xa %*% a$beta) -->
@@ -92,6 +103,7 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- a$cov <- var(tmp2) -->
 <!-- uu <- abs(a$beta/sqrt(diag(a$cov))) -->
 <!-- round(2*(1 - pt(uu, df=nrow(xa)-ncol(xa))), 3) -->
+
 <!-- #(Intercept)     0.000 -->
 <!-- #RT4WordsBack    0.002 -->
 <!-- #RT3WordsBack    0.000 -->
@@ -106,26 +118,36 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- #NumberOfSynsets 0.354 -->
 <!-- #BaseFrequency   0.714 -->
 <!-- #RootFrequency   0.849 -->
+
+
 <!-- # remove all with (rounded) p-values > 0.05 -->
+
 <!-- # Build design matrices to compute the FRB p-values -->
 <!-- # for the robust tests of the hypothesis -->
 <!-- # that all the above betas are indeed zero -->
+
 <!-- xa <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + -->
 <!-- RT1WordBack + RTtoPrime + -->
 <!-- RT2WordsLater + LengthInLetters + RT2WordsBack + -->
 <!-- FamilySize + RT1WordLater +  Rating + NumberOfSynsets + -->
 <!-- BaseFrequency + RootFrequency, data=x2) -->
+
 <!-- x0 <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + -->
 <!-- RT1WordBack + RTtoPrime + -->
 <!-- RT2WordsLater + LengthInLetters, data=x2) -->
+
 <!-- y <- x2$RT -->
+
 <!-- # Compute the FRB p-values -->
+
 <!-- set.seed(123) -->
 <!-- tau.t <- tautest(x0=x0, xa=xa, y = y, R=1000, Nsamp=2500) -->
 <!-- round(unlist(tau.t), 4) -->
+
 <!-- # XXXtest -> test statistic value -->
 <!-- # XXXpvalue -> p-value estimated with the asymptotic approximation -->
 <!-- # XXXBpvalue -> p-value estimated with the FRB -->
+
 <!-- #        tauHa         tauH0     ratiotest    Sratiotest      ASconstS -->
 <!-- #       0.3168        0.3193        0.0156        0.0315        0.4530 -->
 <!-- # Sratiopvalue      SscaleH0      SscaleHa         Wtest         Stest -->
@@ -136,11 +158,18 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- #       0.2180        0.3154        0.4072        0.2555        0.2645 -->
 <!-- #SratioBpvalue -->
 <!-- #       0.1018 -->
+
+
 <!-- # the bootstrap p-values are systematically larger -->
 <!-- # indicating not enough evidence to reject the smaller -->
 <!-- # model. In fact, the smaller model gives better -->
 <!-- # robust predictions! -->
+
+
 <!-- # prediction powers via 5-fold CV for different trimming values -->
+
+
+
 <!-- # trimmed MSE function -->
 <!-- # returns the average of the (1-alpha)100% -->
 <!-- # smallest elements in "x", each of them squared -->
@@ -150,6 +179,8 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- n <- n - n0 -->
 <!-- return( mean( (sort(x^2))[1:n] ) ) -->
 <!-- } -->
+
+
 <!-- n <- dim(x2)[1] -->
 <!-- # Number of 5-fold CV runs -->
 <!-- N <- 500 -->
@@ -162,24 +193,25 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- # 5-fold CV -->
 <!-- ii <- c(1, rep(1:5, each=131)) #ii <- c(1:4, rep(1:5, each=124)) -->
 <!-- for(i in 1:N) { -->
-<!--    ii <- sample(ii) -->
-<!--    pr.r1 <- pr.r2 <- rep(0, n) -->
-<!--    for(j in 1:5) { -->
-<!--        # fit full model -->
-<!--        a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j]) -->
-<!--        # fit reduced model -->
-<!--        b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j]) -->
-<!--        # predictions (full and reduced models) -->
-<!--        pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta) -->
-<!--        pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta) -->
-<!--    } -->
-<!--    for(j in 1:la) { -->
-<!--        # TMSPE  for full and reduced models -->
-<!--        mse.r1[i, j] <- tm( (y - pr.r1), alpha=alp.tr[j] ) # 0.05 -->
-<!--        mse.r2[i, j] <- tm( (y - pr.r2), alpha=alp.tr[j] ) -->
-<!--    } -->
-<!--    print(c(i, mean(mse.r1[1:i,4]), mean(mse.r2[1:i,4]))) -->
+<!-- 	ii <- sample(ii) -->
+<!-- 	pr.r1 <- pr.r2 <- rep(0, n) -->
+<!-- 	for(j in 1:5) { -->
+<!-- 		# fit full model -->
+<!-- 		a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j]) -->
+<!-- 		# fit reduced model -->
+<!-- 		b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j]) -->
+<!-- 		# predictions (full and reduced models) -->
+<!-- 		pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta) -->
+<!-- 		pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta) -->
+<!-- 	} -->
+<!-- 	for(j in 1:la) { -->
+<!-- 		# TMSPE  for full and reduced models -->
+<!-- 		mse.r1[i, j] <- tm( (y - pr.r1), alpha=alp.tr[j] ) # 0.05 -->
+<!-- 		mse.r2[i, j] <- tm( (y - pr.r2), alpha=alp.tr[j] ) -->
+<!-- 	} -->
+<!-- 	print(c(i, mean(mse.r1[1:i,4]), mean(mse.r2[1:i,4]))) -->
 <!-- } -->
+
 <!-- # show the results -->
 <!-- boxplot(mse.r1[,1], mse.r2[,1], -->
 <!-- mse.r1[,2], mse.r2[,2], -->
@@ -189,6 +221,7 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- mse.r1[,6], mse.r2[,6], -->
 <!-- mse.r1[,7], mse.r2[,7], -->
 <!-- labels=rep(la, each=2), col=rep(c('gray90', 'lightblue'), 5)) -->
+
 <!-- # show the results -->
 <!-- par(mfrow=c(2, 3)) -->
 <!-- for(j in 2:7) { -->
@@ -196,7 +229,9 @@ points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
 <!-- main=paste('Trimming: ', alp.tr[j], sep=''), -->
 <!-- names = c('Full', 'Reduced'), main='', ylab='TMSPE', cex.axis=1.3, cex.lab=1.3) -->
 <!-- } -->
+
 <!-- # 10% trimmed MSPE -->
 <!-- boxplot(mse.r1[,5], mse.r2[,5], col=c('gray90', 'lightblue'), -->
 <!-- #main=paste('Trimming: ', alp.tr[j], sep=''), -->
 <!-- names = c('Full', 'Reduced'), main='', ylab='TMSPE', cex.axis=1.3, cex.lab=1.3) -->
+
