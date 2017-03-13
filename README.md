@@ -1,7 +1,7 @@
 Robust tests for linear regression models based on tau-estimates
 ================
 Matias Salibian
-2017-03-12
+2017-03-13
 
 Robust tests based on tau-estimates
 -----------------------------------
@@ -35,7 +35,7 @@ xa <- model.matrix(RT ~ RT4WordsBack + RT3WordsBack + RT1WordBack + RTtoPrime +
 a <- fasttau_Opt(x = xa, y = x2$RT)
 ```
 
-We now build a robust-leverage vs residuals plot:
+We now build a robust-leverage vs residuals plot, and indicate potential outliers in red:
 
 ``` r
 # Compute robust leverage measures (Mahalanobis distances computed in the
@@ -58,7 +58,7 @@ abline(h = 0, lwd = 2)
 abline(v = qchisq(0.995, df = 13), lwd = 2, lty = 2, col = "gray40")
 # Highlight outliers
 oo <- (abs(res) > 3.5)
-points(res ~ x.ma, pch = 19, col = "gray30", cex = 1.3, subset = oo)
+points(res ~ x.ma, pch = 19, col = "tomato", cex = 1.7, subset = oo)
 ```
 
 ![](README_files/figure-markdown_github/levres-1.png)
@@ -146,81 +146,86 @@ round(unlist(tau.t), 4)
     ## SratioBpvalue 
     ##        0.1028
 
-The labels for the above p-values is as follows: - XXXtest: is the corresponding value of the test statistic; - XXXpvalue: is the p-value estimated with the asymptotic approximation - XXXBpvalue: is the p-value estimated with the FRB
+The labels for the above p-values are as follows: \* XXXtest: is the corresponding value of the test statistic; \* XXXpvalue: is the p-value estimated with the asymptotic approximation \* XXXBpvalue: is the p-value estimated with the FRB
 
-Note that the bootstrap p-values are systematically larger than those based on the asymptotic distribution, which suggests that there is not enough evidence to reject the smaller model. In fact, the smaller model gives better robust predictions.
+Note that the bootstrap p-values are systematically larger than those based on the asymptotic distribution, which suggests that there is not enough evidence to reject the smaller model. In fact, we show below that the smaller model gives better robust predictions.
 
-prediction powers via 5-fold CV for different trimming values
--------------------------------------------------------------
+Prediction powers via 5-fold CV for different trimming values
+=============================================================
+
+We will use 10 runs of 5-fold CV to compare the predictions obtained with the full and the reduced models. To avoid penalizing poor predictions for the outlying observations, instead of using the usual mean squared residual error, for each sample we compute the 10% \`\`upper-trimmed mean squared error'' which is the mean of the 90% smallest residuals (in absolute value).
 
 ``` r
 # trimmed MSE function
 # returns the average of the (1-alpha)100%
 # smallest elements in "x", each of them squared
 tm <- function(x, alpha) {
-n <- length(x)
-n0 <- floor(alpha * n)
-n <- n - n0
-return( mean( (sort(x^2))[1:n] ) )
+  n <- length(x)
+  n0 <- floor(alpha * n)
+  n <- n - n0
+  return( mean( (sort(x^2))[1:n] ) )
 }
 
 
 n <- dim(x2)[1]
 # Number of 5-fold CV runs
-N <- 50 # 500
-# trimming proportions
-# alp.tr <- c(0, 0.01, 0.02, 0.05, 0.10, .15, .2)
-# la <- length(alp.tr)
-# store the TMSPE
-mse.r1 <- mse.r2 <- rep(0, N) # matrix(0, N, la)
+N <- 10
+mse.r1 <- mse.r2 <- rep(0, N) 
 set.seed(123)
 # 5-fold CV
 k <- 5
-ii <- (1:n) %% k + 1 # c(1, rep(1:5, each=131)) #ii <- c(1:4, rep(1:5, each=124))
+ii <- (1:n) %% k + 1 
 for(i in 1:N) {
-    ii <- sample(ii)
-    pr.r1 <- pr.r2 <- rep(0, n)
-    for(j in 1:5) {
-        # fit full model
-        a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j])
-        # fit reduced model
-        b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j])
-        # predictions (full and reduced models)
-        pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta)
-        pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta)
-    }
-    # for(j in 1:la) {
-    #   # TMSPE  for full and reduced models
-    #   mse.r1[i, j] <- tm( (y - pr.r1), alpha=alp.tr[j] ) # 0.05
-    #   mse.r2[i, j] <- tm( (y - pr.r2), alpha=alp.tr[j] )
-    # }
-    mse.r1[i] <- tm( (y - pr.r1), alpha=0.10) # alp.tr[j] ) 
-    mse.r2[i] <- tm( (y - pr.r2), alpha=0.10) # alp.tr[j] ) 
-    # print(c(i, mean(mse.r1[1:i,4]), mean(mse.r2[1:i,4])))
+  ii <- sample(ii)
+  pr.r1 <- pr.r2 <- rep(0, n)
+  for(j in 1:5) {
+    # fit full model
+    a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j])
+    # fit reduced model
+    b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j])
+    # predictions (full and reduced models)
+    pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta)
+    pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta)
+  }
+  # 10% trimmed mean squared prediction error
+  mse.r1[i] <- tm( (y - pr.r1), alpha=0.10) # alp.tr[j] ) 
+  mse.r2[i] <- tm( (y - pr.r2), alpha=0.10) # alp.tr[j] ) 
 }
-
-# # show the results
-# boxplot(mse.r1[,1], mse.r2[,1],
-# mse.r1[,2], mse.r2[,2],
-# mse.r1[,3], mse.r2[,3],
-# mse.r1[,4], mse.r2[,4],
-# mse.r1[,5], mse.r2[,5],
-# mse.r1[,6], mse.r2[,6],
-# mse.r1[,7], mse.r2[,7],
-# labels=rep(la, each=2), col=rep(c('gray90', 'lightblue'), 5))
-# 
-# # show the results
-# par(mfrow=c(2, 3))
-# for(j in 2:7) {
-# boxplot(mse.r1[,j], mse.r2[,j], col=c('gray90', 'lightblue'),
-# main=paste('Trimming: ', alp.tr[j], sep=''),
-# names = c('Full', 'Reduced'), main='', ylab='TMSPE', cex.axis=1.3, cex.lab=1.3)
-# }
-
-# 10% trimmed MSPE
 boxplot(mse.r1, mse.r2, col=c('gray90', 'lightblue'),
-# main=paste('Trimming: ', alp.tr[j], sep=''),
-names = c('Full', 'Reduced'), ylab='TMSPE', cex.axis=1.3, cex.lab=1.3)
+        # main=paste('Trimming: ', alp.tr[j], sep=''),
+        names = c('Full', 'Reduced'), ylab='TMSPE', cex.axis=1.3, cex.lab=1.3)
 ```
 
 ![](README_files/figure-markdown_github/preds-1.png)
+
+<!-- The next plot shows the results of 100 runs -->
+<!-- of 5-fold CV, which confirm these results: -->
+<!-- ```{R preds2, fig.height=7, fig.width=7, tidy=TRUE, warning=FALSE, message=FALSE, cache=TRUE, echo=FALSE} -->
+<!-- n <- dim(x2)[1] -->
+<!-- # Number of 5-fold CV runs -->
+<!-- N <- 100 -->
+<!-- mse.r1 <- mse.r2 <- rep(0, N)  -->
+<!-- set.seed(123) -->
+<!-- # 5-fold CV -->
+<!-- k <- 5 -->
+<!-- ii <- (1:n) %% k + 1  -->
+<!-- for(i in 1:N) { -->
+<!--   ii <- sample(ii) -->
+<!--   pr.r1 <- pr.r2 <- rep(0, n) -->
+<!--   for(j in 1:5) { -->
+<!--     # fit full model -->
+<!--     a <- fasttau_Opt(x=xa[ii!=j,], y = y[ii!=j]) -->
+<!--     # fit reduced model -->
+<!--     b <- fasttau_Opt(x=x0[ii!=j,], y = y[ii!=j]) -->
+<!--     # predictions (full and reduced models) -->
+<!--     pr.r1[ii==j] <- as.vector(xa[ii==j,] %*% a$beta) -->
+<!--     pr.r2[ii==j] <- as.vector(x0[ii==j,] %*% b$beta) -->
+<!--   } -->
+<!--   # 10% trimmed mean squared prediction error -->
+<!--   mse.r1[i] <- tm( (y - pr.r1), alpha=0.10) # alp.tr[j] )  -->
+<!--   mse.r2[i] <- tm( (y - pr.r2), alpha=0.10) # alp.tr[j] )  -->
+<!-- } -->
+<!-- boxplot(mse.r1, mse.r2, col=c('gray90', 'lightblue'), -->
+<!--         # main=paste('Trimming: ', alp.tr[j], sep=''), -->
+<!--         names = c('Full', 'Reduced'), ylab='TMSPE', cex.axis=1.3, cex.lab=1.3) -->
+<!-- ``` -->
