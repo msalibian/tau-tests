@@ -130,7 +130,7 @@ robust predictions.
 
 # Prediction power of the reduced model  
 
-We will use 10 runs of 5-fold CV to compare the predictions 
+We will use 50 runs of 5-fold CV to compare the predictions 
 obtained with the full and the reduced models. To avoid
 penalizing poor predictions for the outlying observations,
 instead of using the usual mean squared residual error,
@@ -152,7 +152,7 @@ tm <- function(x, alpha) {
 
 n <- dim(x2)[1]
 # Number of 5-fold CV runs
-N <- 10
+N <- 50
 mse.r1 <- mse.r2 <- rep(0, N) 
 set.seed(123)
 # 5-fold CV

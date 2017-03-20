@@ -1,7 +1,7 @@
 Robust tests for linear regression models based on tau-estimates
 ================
 Matias Salibian
-2017-03-13
+2017-03-20
 
 Robust tests based on tau-estimates
 -----------------------------------
@@ -153,7 +153,7 @@ Note that the bootstrap p-values are systematically larger than those based on t
 Prediction power of the reduced model
 =====================================
 
-We will use 10 runs of 5-fold CV to compare the predictions obtained with the full and the reduced models. To avoid penalizing poor predictions for the outlying observations, instead of using the usual mean squared residual error, for each sample we compute the 10% \`\`upper-trimmed mean squared error'' which is the mean of the 90% smallest residuals (in absolute value).
+We will use 50 runs of 5-fold CV to compare the predictions obtained with the full and the reduced models. To avoid penalizing poor predictions for the outlying observations, instead of using the usual mean squared residual error, for each sample we compute the 10% \`\`upper-trimmed mean squared error'' which is the mean of the 90% smallest residuals (in absolute value).
 
 ``` r
 # trimmed MSE function
@@ -169,7 +169,7 @@ tm <- function(x, alpha) {
 
 n <- dim(x2)[1]
 # Number of 5-fold CV runs
-N <- 10
+N <- 50
 mse.r1 <- mse.r2 <- rep(0, N) 
 set.seed(123)
 # 5-fold CV
